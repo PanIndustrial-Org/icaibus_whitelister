@@ -175,6 +175,7 @@ shared (deployer) actor class Subscriber<system>(args: ?{
       args = icrc72SubscriberInitArgs;
       pullEnvironment = ?(func() : ICRC72Subscriber.Environment{
         {      
+          advanced = null;
           var addRecord = ?addRecord;
           var icrc72OrchestratorCanister = orchestratorPrincipal;
           tt = tt();
