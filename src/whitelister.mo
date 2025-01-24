@@ -14,6 +14,7 @@ import base16 "mo:base16/Base16";
 
 import Array "mo:base/Array";
 import Blob "mo:base/Blob";
+import Buffer "mo:base/Buffer";
 import D "mo:base/Debug";
 import Nat "mo:base/Nat";
 import Principal "mo:base/Principal";
@@ -72,6 +73,8 @@ shared (deployer) actor class Subscriber<system>(args: ?{
   let Map = ICRC72Subscriber.Map;
   type ICRC16 = ICRC72Subscriber.ICRC16;
   type ICRC16Map = ICRC72Subscriber.ICRC16Map;
+  type ICRC16Property = ICRC72Subscriber.ICRC16Property;
+  type ICRC16MapItem = ICRC72Subscriber.ICRC16MapItem;
 
   let icrc72SubscriberDefaultArgs = null;
   let ttDefaultArgs = null;
@@ -181,6 +184,7 @@ shared (deployer) actor class Subscriber<system>(args: ?{
           //127_000 per gbit per second.  
           var handleEventOrder = null;
           var handleNotificationPrice = ?ICRC72Subscriber.ReflectWithMaxStrategy("com.panindustrial.icaibus.message.cycles", 10_000_000_000); 
+          var onSubscriptionReady = null;
           var handleNotificationError = ?(func<system>(event: ICRC72Subscriber.EventNotification, error: Error) : () {
             D.print("Error in Notification: " # debug_show(event) # " " # Error.message(error));
 
@@ -291,37 +295,57 @@ shared (deployer) actor class Subscriber<system>(args: ?{
 
   public shared(msg) func initRegistration() : async () {
 
+    D.print("Initializing Registration");
+
     let createList = await* icrc75().manage_list_properties(_owner, [{
       list = "com.panidustrial.icaibus.alphaTester";
       action = #Create({
         admin = null;
         metadata = [(
-          ("instructions", #Text("Send ICP to the list to become a alpha Tester"))
+          ("instructions", #Text("Send ICP to 39a79b465426fc1b4bd37bc332fec64f7ea3b167a7bd3790dae5a7b18e959d50 to become an alpha Tester. Who knows what may happen!"))
         )];
         members = [];
       });
       memo= null;
       from_subaccount= null;
       created_at_time= null;
+    },{
+      list = "com.panidustrial.icaibus.alphaTester";
+      action = #ChangePermissions(#Read(#Add(#Identity(Principal.fromText("2vxsx-fae")))));
+      memo = null;
+      from_subaccount = null;
+      created_at_time = null;
     }], null);
+
+    D.print("List Created: " # debug_show(createList));
 
     let subscribeResult = await* icrc72_subscriber().subscribe([{
       namespace = "com.icp.org.trx_stream";
       config = [
-        (ICRC72Subscriber.CONST.subscription.filter, #Text("$.tx.to == \"" # base16.encode(AccountIdentifier.accountIdentifier(thisPrincipal, AccountIdentifier.defaultSubaccount())) # "\"")),
+        (ICRC72Subscriber.CONST.subscription.filter, #Text("$.to == 39a79b465426fc1b4bd37bc332fec64f7ea3b167a7bd3790dae5a7b18e959d50")),
+        (ICRC72Subscriber.CONST.subscription.controllers.list, #Array([#Blob(Principal.toBlob(thisPrincipal)), #Blob(Principal.toBlob(_owner))])),
       ];
       memo = null;
       listener = #Async(
           func <system>(event: ICRC72Subscriber.EventNotification) : async* (){
+            D.print("Received Event: " # debug_show(event));
             let #Class(data) = event.data else return;
-            let trx = Map.fromIter<Text,ICRC16>(data.vals(), Map.thash);
+            let trx = data |>
+                       Array.map<ICRC16Property, ICRC16MapItem>(_, func(x) : ICRC16MapItem{(x.name, x.value)}) |>
+                       _.vals() |>
+                        Map.fromIter<Text,ICRC16>(_, Map.thash);
 
-            
+            D.print(debug_show(trx));
             let ?#Nat(amount) = Map.get<Text,ICRC16>(trx, Map.thash, "amount") else return;
             let ?#Text(from) = Map.get<Text,ICRC16>(trx, Map.thash, "from") else return;
             let ?#Text(spender) = Map.get<Text,ICRC16>(trx, Map.thash, "spender") else return;
             let ?#Nat(ts) = Map.get<Text,ICRC16>(trx, Map.thash, "ts") else return;
-            //let ?#Nat(trxId) = Map.get<Text,ICRC16>(trx, Map.thash, "id") else return;
+            let trxId = switch(Map.get<Text,ICRC16>(trx, Map.thash, "id")){
+              case(?#Nat(val)) val;
+              case(_) 0;
+            };
+
+            D.print("Received Transaction: " # debug_show((amount, from, spender, ts, trxId)));
             
             if(amount > 10_000){
 
@@ -330,13 +354,19 @@ shared (deployer) actor class Subscriber<system>(args: ?{
               switch(foundMember){
                 case(null){
                   //not yet a member
-                  let result = icrc75().manage_list_properties(_owner, [{
+                  let result = await* icrc75().manage_list_properties(_owner, [{
                     list= "com.panidustrial.icaibus.alphaTester." # from;
                     action= #Create({
                       members = [];
                       admin = null;
                       metadata = [];
                     });
+                    memo = null;
+                    from_subaccount = null;
+                    created_at_time = null;
+                  },{
+                    list = "com.panidustrial.icaibus.alphaTester" # from;
+                    action = #ChangePermissions(#Read(#Add(#Identity(Principal.fromText("2vxsx-fae")))));
                     memo = null;
                     from_subaccount = null;
                     created_at_time = null;
@@ -355,13 +385,21 @@ shared (deployer) actor class Subscriber<system>(args: ?{
                 created_at_time = null;
               }], null);
 
+              let buildRecord = Buffer.Buffer<ICRC16MapItem>(2);
+              buildRecord.add("amount", #Nat(amount));
+              buildRecord.add("ts", #Nat(ts));
+
+              if(spender.size() > 0){
+                buildRecord.add("spender", #Text(spender));
+              };
+
+              if(trxId > 0){
+                buildRecord.add("trxId", #Nat(trxId));
+              };
+
               let resultDetail = await* icrc75().manage_list_membership(_owner, [{
                 list = "com.panidustrial.icaibus.alphaTester." # from;
-                action = #Add( #DataItem(#Map([
-                  ("amount", #Nat(amount)),
-                  ("spender", #Text(spender)),
-                  ("ts", #Nat(ts))
-                ])));
+                action = #Add( #DataItem(#Map(Buffer.toArray(buildRecord))));
                 memo = null;
                 from_subaccount = null;
                 created_at_time = null;
@@ -370,6 +408,8 @@ shared (deployer) actor class Subscriber<system>(args: ?{
           });
       
     }]);
+
+    D.print("Subscription Result: " # debug_show(subscribeResult));
 
     return;
   };
@@ -425,6 +465,8 @@ shared (deployer) actor class Subscriber<system>(args: ?{
   public query(msg) func getICRC75Stats() : async ICRC75.Stats {
     return icrc75().get_stats();
   };
+
+
 
 
 };

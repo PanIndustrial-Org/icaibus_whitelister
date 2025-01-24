@@ -1,7 +1,7 @@
 {
   "canisters": {
     "whitelister": {
-      "main": "src/subscriber.mo",
+      "main": "src/whitelister.mo",
       "type": "motoko"
     }
   },
