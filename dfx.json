@@ -3,6 +3,10 @@
     "whitelister": {
       "main": "src/whitelister.mo",
       "type": "motoko"
+    },
+    "splitter": {
+      "main": "src/splitter.mo",
+      "type": "motoko"
     }
   },
   "defaults": {

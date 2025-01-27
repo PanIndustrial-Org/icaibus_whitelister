@@ -289,12 +289,13 @@ shared (deployer) actor class Subscriber<system>(args: ?{
 
   public shared(msg) func updateSubscription(request: [ICRC72OrchestratorService.SubscriptionUpdateRequest]) : async [ICRC72OrchestratorService.SubscriptionUpdateResult] {
 
-    if(msg.caller != _owner) D.trap("Unauthorized");
+    if(msg.caller != _owner) D.trap("Unauthorized in update sub");
     return await* icrc72_subscriber().updateSubscription( request);
   };
 
 
   public shared(msg) func initRegistration() : async () {
+    if(msg.caller != _owner) D.trap("Unauthorized in initRegistration");
 
     D.print("Initializing Registration");
 
@@ -303,7 +304,7 @@ shared (deployer) actor class Subscriber<system>(args: ?{
       action = #Create({
         admin = null;
         metadata = [(
-          ("instructions", #Text("Send ICP to 39a79b465426fc1b4bd37bc332fec64f7ea3b167a7bd3790dae5a7b18e959d50 to become an alpha Tester. Who knows what may happen!"))
+          ("instructions", #Text("Send ICP to e9dc3bbbcb45479709e8ef512f6c8a66d6593cbb1b8621ff9cdbde917d6da9aa to become an alpha Tester. Who knows what may happen!"))
         )];
         members = [];
       });
@@ -323,7 +324,7 @@ shared (deployer) actor class Subscriber<system>(args: ?{
     let subscribeResult = await* icrc72_subscriber().subscribe([{
       namespace = "com.icp.org.trx_stream";
       config = [
-        (ICRC72Subscriber.CONST.subscription.filter, #Text("$.to == 39a79b465426fc1b4bd37bc332fec64f7ea3b167a7bd3790dae5a7b18e959d50")),
+        (ICRC72Subscriber.CONST.subscription.filter, #Text("$.to == e9dc3bbbcb45479709e8ef512f6c8a66d6593cbb1b8621ff9cdbde917d6da9aa")),
         (ICRC72Subscriber.CONST.subscription.controllers.list, #Array([#Blob(Principal.toBlob(thisPrincipal)), #Blob(Principal.toBlob(_owner))])),
       ];
       memo = null;
@@ -366,7 +367,7 @@ shared (deployer) actor class Subscriber<system>(args: ?{
                     from_subaccount = null;
                     created_at_time = null;
                   },{
-                    list = "com.panidustrial.icaibus.alphaTester" # from;
+                    list = "com.panidustrial.icaibus.alphaTester." # from;
                     action = #ChangePermissions(#Read(#Add(#Identity(Principal.fromText("2vxsx-fae")))));
                     memo = null;
                     from_subaccount = null;
@@ -466,9 +467,6 @@ shared (deployer) actor class Subscriber<system>(args: ?{
   public query(msg) func getICRC75Stats() : async ICRC75.Stats {
     return icrc75().get_stats();
   };
-
-
-
 
 };
 
