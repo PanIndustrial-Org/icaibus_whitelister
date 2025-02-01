@@ -1,14 +1,14 @@
-import ICRC72OrchestratorService "../../icrc72-orchestrator.mo/src/service";
+import ICRC72OrchestratorService "mo:icrc72-subscriber-mo/orchestratorService";
 
-import TT "../../timerTool/src/";
+import TT "mo:timer-tool";
 
-import ICRC72Subscriber "../../icrc72-subscriber.mo/src/";
-import ICRC72SubscriberService "../../icrc72-subscriber.mo/src/service";
-import ICRC72BroadcasterService "../../icrc72-broadcaster.mo/src/service";
-import ICRC72Publisher "../../icrc72-publisher.mo/src/";
-import ICRC75Service "../../ICRC75/src/service";
+import ICRC72Subscriber "mo:icrc72-subscriber-mo";
+import ICRC72SubscriberService "mo:icrc72-subscriber-mo/service";
+import ICRC72BroadcasterService "mo:icrc72-subscriber-mo/broadcasterService";
+
+import ICRC75Service "mo:icrc75.mo/service";
 import ICRC10 "mo:icrc10-mo";
-import ClassPlus "../../../../ICDevs/projects/ClassPlus/src/";
+import ClassPlus "mo:class-plus";
 import base16 "mo:base16/Base16";
 
 
@@ -22,9 +22,10 @@ import Timer "mo:base/Timer";
 import Text "mo:base/Text";
 import Error "mo:base/Error";
 import Vector "mo:vector";
-import ICRC75 "../../ICRC75/src/";
+import ICRC75 "mo:icrc75.mo";
 import CertTree "mo:ic-certification/CertTree";
 import AccountIdentifier "mo:account-identifier";
+
 
 
 
@@ -325,6 +326,7 @@ shared (deployer) actor class Subscriber<system>(args: ?{
       namespace = "com.icp.org.trx_stream";
       config = [
         (ICRC72Subscriber.CONST.subscription.filter, #Text("$.to == e9dc3bbbcb45479709e8ef512f6c8a66d6593cbb1b8621ff9cdbde917d6da9aa")),
+
         (ICRC72Subscriber.CONST.subscription.controllers.list, #Array([#Blob(Principal.toBlob(thisPrincipal)), #Blob(Principal.toBlob(_owner))])),
       ];
       memo = null;

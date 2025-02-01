@@ -1,14 +1,13 @@
-import ICRC72OrchestratorService "../../icrc72-orchestrator.mo/src/service";
+import ICRC72OrchestratorService "mo:icrc72-subscriber-mo/orchestratorService";
 
-import TT "../../timerTool/src/";
+import TT "mo:timer-tool";
 
-import ICRC72Subscriber "../../icrc72-subscriber.mo/src/";
-import ICRC72SubscriberService "../../icrc72-subscriber.mo/src/service";
-import ICRC72BroadcasterService "../../icrc72-broadcaster.mo/src/service";
-import ICRC72Publisher "../../icrc72-publisher.mo/src/";
-import ICRC75Service "../../ICRC75/src/service";
+import ICRC72Subscriber "mo:icrc72-subscriber-mo";
+import ICRC72SubscriberService "mo:icrc72-subscriber-mo/service";
+import ICRC72BroadcasterService "mo:icrc72-subscriber-mo/broadcasterService";
+import ICRC75Service "mo:icrc75.mo/service";
 import ICRC10 "mo:icrc10-mo";
-import ClassPlus "../../../../ICDevs/projects/ClassPlus/src/";
+import ClassPlus "mo:class-plus";
 import base16 "mo:base16/Base16";
 
 

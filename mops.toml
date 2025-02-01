@@ -16,6 +16,8 @@ icrc10-mo = "0.0.1"
 base16 = "1.0.0"
 account = "1.0.1"
 account-identifier = "1.0.2"
+"icrc75.mo" = "https://github.com/icdevsorg/icrc75.mo#classplus@1d52e80332417fa7824c5ed7917788fd3c80cd87"
+icrc72-subscriber-mo = "0.0.1"
 
 [package]
 name = "mvevent"
